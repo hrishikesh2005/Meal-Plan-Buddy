@@ -1,6 +1,34 @@
-import { clerkMiddleware } from "@clerk/nextjs/server";
+import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { subscribe } from "diagnostics_channel";
+import { url } from "inspector";
+import next from "next";
+import { NextResponse } from "next/server";
 
-export default clerkMiddleware();
+const isPublicRoute=createRouteMatcher([
+  "/",
+  "/sign-up(.*)",
+  "/subscribe(.*)",
+])
+
+const isSignUproute=createRouteMatcher([
+  "/sign-up(.*)",
+])
+
+export default clerkMiddleware( async (auth,req)=>{
+  const userAuth= await auth();
+  const {userId}=userAuth;
+  const {pathname ,origin}=req.nextUrl
+  console.log("middleware info:",userId,pathname,origin);
+  //ispublicroute return boolean if user route matches given route
+  if (!isPublicRoute(req) && !userId ){
+    return NextResponse.redirect(new URL("/sign-up",origin));
+  }
+  if (isSignUproute(req) && userId){
+    return NextResponse.redirect(new URL("/mealplan",origin))
+  }
+
+
+});
 
 export const config = {
   matcher: [
